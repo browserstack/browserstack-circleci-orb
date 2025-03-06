@@ -1,0 +1,10 @@
+version: '2.1'
+orbs:
+  browserstack-circleci-orb: browserstack/browserstack-circleci-orb@1.0.0
+workflows:
+  cleanup-job-example:
+    jobs:
+      - my_test_job
+      - browserstack-circleci-orb/cleanup_env:
+          requires:
+            - my_test_job
