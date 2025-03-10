@@ -1,14 +1,14 @@
 version: 2.1
 
 description: >
-  Sample orb description
+  Browserstack orb to set custom job-scope variables for a user config.
 # What will your orb allow users to accomplish?
 # Descriptions should be short, simple, and informative.
 
 # This information will be displayed in the orb registry and is not mandatory.
 display:
-  home_url: "https://www.example.com/docs"
-  source_url: "https://github.com/JryBWxh6hsGZUqwDfzkkT7/browserstack-circleci-orb"
+  home_url: "https://browserstack.com"
+  source_url: "https://github.com/browserstack/browserstack-circleci-orb"
 
 # If your orb requires other orbs, you can import them like this. Otherwise remove the "orbs" stanza.
 # orbs:
