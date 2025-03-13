@@ -2,7 +2,7 @@ description: "Cleanup the project level environment variable set by browserstack
 
 steps:
   - run:
-      name: Cleanup Environment
+      name: Set Rerun Tests
       command: <<include(scripts/rerun_tests.sh)>>
       environment:
         CLEANUP_ENV_VAR: true
