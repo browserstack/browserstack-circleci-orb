@@ -1,5 +1,7 @@
 description: "Cleanup the project level environment variable"
 
+executor: default
+
 steps:
   - run:
       name: Cleanup Environment

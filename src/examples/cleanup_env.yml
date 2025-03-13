@@ -1,10 +1,14 @@
-version: '2.1'
-orbs:
-  browserstack-circleci-orb: browserstack/browserstack-circleci-orb@1.0.0
-workflows:
-  cleanup-job-example:
-    jobs:
-      - my_test_job
-      - browserstack-circleci-orb/cleanup_env:
-          requires:
-            - my_test_job
+description: |
+  This example demonstrates how to use the BrowserStack CircleCI Orb to clean up the project environment variables after the test execution.
+
+usage:
+  version: 2.1
+  orbs:
+    browserstack-circleci-orb: browserstack/browserstack-circleci-orb@x.y.z
+  workflows:
+    cleanup-job-example:
+      jobs:
+        - my_test_job
+        - browserstack-circleci-orb/cleanup_env:
+            requires:
+              - my_test_job
