@@ -1,0 +1,23 @@
+description: |
+  This example demonstrates how to use browserstack rerun tests command & set it in job environment variable.
+
+usage:
+  version: 2.1
+  orbs:
+    browserstack-circleci-orb: browserstack/browserstack-circleci-orb@x.y.z
+
+  jobs:
+    my_test_job:
+      executor: default
+      steps:
+        - checkout
+        - browserstack-circleci-orb/set_rerun_tests:
+            delete_env_var: true # Default value is False
+        - run:
+            name: Run Test
+            command: |
+              echo "Bs Tests: $BSTACK_RERUN_TESTS"
+  workflows:
+    set-rerun-tests-example:
+      jobs:
+        - my_test_job

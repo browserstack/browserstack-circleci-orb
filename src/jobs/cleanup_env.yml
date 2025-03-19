@@ -1,0 +1,10 @@
+description: "Cleanup the project level environment variable"
+
+executor: default
+
+steps:
+  - run:
+      name: Cleanup Environment
+      command: <<include(scripts/rerun_tests.sh)>>
+      environment:
+        CLEANUP_ENV_VAR: true
