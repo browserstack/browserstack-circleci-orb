@@ -7,7 +7,7 @@ REPORT_STATUS_NOT_AVAILABLE="NOT_AVAILABLE"
 REPORT_STATUS_TEST_AVAILABLE="TEST_AVAILABLE"
 REPORT_STATUS_IN_PROGRESS="IN_PROGRESS"
 REQUESTING_CI="circle-ci"
-REPORT_FORMAT="[\"basicHtml\", \"richHtml\"]" # need to verify to add plainText as well
+REPORT_FORMAT="[\"plainText\", \"richHtml\"]"
 
 # Error scenario mappings
 declare -A ERROR_SCENARIOS=(
@@ -21,26 +21,6 @@ if [[ -z "$BROWSERSTACK_BUILD_NAME" ]]; then
   echo "Error: BROWSERSTACK_BUILD_NAME is not set."
   exit 0
 fi
-
-# Function to install html2text
-install_html2text() {
-  echo "Checking and installing html2text if not installed..."
-  if ! command -v html2text &> /dev/null; then
-    echo "html2text not found. Installing..."
-    if command -v apt-get &> /dev/null; then
-      sudo apt-get update && sudo apt-get install -y html2text
-    elif command -v yum &> /dev/null; then
-      sudo yum install -y html2text
-    else
-      echo "Package manager not supported. Please install html2text manually."
-      exit 0
-    fi
-  else
-    echo "html2text is already installed."
-  fi
-}
-
-install_html2text
 
 # Function to make API requests
 make_api_request() {
@@ -84,7 +64,7 @@ extract_report_data() {
     local response=$1
     rich_html_response=$(echo "$response" | jq -r '.report.richHtml // empty')
     rich_css_response=$(echo "$response" | jq -r '.report.richCss // empty')
-    basic_html_response=$(echo "$response" | jq -r '.report.basicHtml // empty')
+    plain_text_response=$(echo "$response" | jq -r '.report.plainText // empty')
 }
 
 # Function to check report status
@@ -173,20 +153,13 @@ $rich_html_response
 </html>" > browserstack/cadreport.html
   echo "Rich html report saved as browserstack/cadreport.html. To view the report, open artifacts tab & click on cadreport.html"
 
-# Generate basic text report
-  if [[ -n "$basic_html_response" ]]; then
-    # Wrap basic_html_response with DOCTYPE html and body tags
-    basic_html_response="<!DOCTYPE html><html>$basic_html_response/html>"
-
-    if command -v html2text &> /dev/null; then
-      basic_text_report=$(echo "$basic_html_response" | html2text)
-      echo "Basic report (text format):"
-      echo "$basic_text_report"
-    else
-      echo "html2text not installed. Skipping text report generation."
-    fi
+  # Generate plain text report
+  if [[ -n "$plain_text_response" ]]; then
+    echo ""
+    echo "Browserstack textual report"
+    echo "$plain_text_response"
   else
-    echo "Basic HTML response is empty."
+    echo "Plain text response is empty."
   fi
 elif [[ "$REPORT_STATUS" == "$REPORT_STATUS_NOT_AVAILABLE" ]]; then
   error_reason=$(echo "$RESPONSE" | jq -r '.body.errorReason // empty')
