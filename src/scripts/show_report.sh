@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Constants
-API_PATH="https://api-observability.browserstack.com/api/v1/builds/buildReport"
+API_PATH="https://api-observability.browserstack.com/ext/v1/builds/buildReport"
 REPORT_STATUS_COMPLETED="COMPLETED"
 REPORT_STATUS_NOT_AVAILABLE="NOT_AVAILABLE"
 REPORT_STATUS_TEST_AVAILABLE="TEST_AVAILABLE"
