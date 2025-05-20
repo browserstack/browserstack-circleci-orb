@@ -30,7 +30,6 @@ make_api_request() {
   local response
 
   # Encode username:accesskey to base64
-  local auth_header
   auth_header=$(echo -n "${BROWSERSTACK_USERNAME}:${BROWSERSTACK_ACCESS_KEY}" | base64)
   # Create a temporary file for headers
   header_file=$(mktemp)
