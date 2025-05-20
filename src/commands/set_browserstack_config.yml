@@ -1,0 +1,6 @@
+description: "Set BrowserStack configuration in the environment variables. ( Also, here expectation is that browserstack username & access key will be set by user either in yml or in project env variables )"
+
+steps:
+  - run:
+      name: Set BrowserStack Config
+      command: <<include(scripts/set_browserstack_config.sh)>>

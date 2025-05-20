@@ -1,0 +1,203 @@
+#!/bin/bash
+
+# Constants
+API_PATH="https://api-observability.browserstack.com/api/v1/builds/buildReport"
+REPORT_STATUS_COMPLETED="COMPLETED"
+REPORT_STATUS_NOT_AVAILABLE="NOT_AVAILABLE"
+REPORT_STATUS_TEST_AVAILABLE="TEST_AVAILABLE"
+REPORT_STATUS_IN_PROGRESS="IN_PROGRESS"
+REQUESTING_CI="circle-ci"
+REPORT_FORMAT="[\"basicHtml\", \"richHtml\"]" # need to verify to add plainText as well
+
+# Error scenario mappings
+declare -A ERROR_SCENARIOS=(
+  ["BUILD_NOT_FOUND"]="Build not found in BrowserStack"
+  ["MULTIPLE_BUILD_FOUND"]="Multiple builds found with the same name"
+  ["DATA_NOT_AVAILABLE"]="Report data not available from BrowserStack"
+)
+  
+# Check if BROWSERSTACK_BUILD_NAME is set
+if [[ -z "$BROWSERSTACK_BUILD_NAME" ]]; then
+  echo "Error: BROWSERSTACK_BUILD_NAME is not set."
+  exit 0
+fi
+
+# Function to install html2text
+install_html2text() {
+  echo "Checking and installing html2text if not installed..."
+  if ! command -v html2text &> /dev/null; then
+    echo "html2text not found. Installing..."
+    if command -v apt-get &> /dev/null; then
+      sudo apt-get update && sudo apt-get install -y html2text
+    elif command -v yum &> /dev/null; then
+      sudo yum install -y html2text
+    else
+      echo "Package manager not supported. Please install html2text manually."
+      exit 0
+    fi
+  else
+    echo "html2text is already installed."
+  fi
+}
+
+install_html2text
+
+# Function to make API requests
+make_api_request() {
+  local request_type=$1
+  local auth_header
+  local header_file
+  local response
+
+  # Encode username:accesskey to base64
+  local auth_header
+  auth_header=$(echo -n "${BROWSERSTACK_USERNAME}:${BROWSERSTACK_ACCESS_KEY}" | base64)
+  # Create a temporary file for headers
+  header_file=$(mktemp)
+  response=$(curl -s -w "%{http_code}" -X POST "$API_PATH" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Basic $auth_header" \
+    -D "$header_file" \
+    -d "{
+          \"originalBuildName\": \"${BROWSERSTACK_BUILD_NAME}\",
+          \"buildCreatedAt\": \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\",
+          \"requestingCi\": \"$REQUESTING_CI\",
+          \"reportFormat\": $REPORT_FORMAT,
+          \"requestType\": \"$request_type\",
+          \"userTimeout\": \"${USER_TIMEOUT}\"
+        }")
+  
+  # Extract the HTTP status code from the response
+  local http_status=${response: -3}
+  # Extract the response body (everything except the last 3 characters)
+  local body=${response:0:${#response}-3}
+  
+  # Clean up the temporary file
+  rm -f "$header_file"
+
+  # Return both status code and body as a JSON object
+  echo "{\"status_code\": $http_status, \"body\": $body}"
+}
+
+# Function to extract report data
+extract_report_data() {
+    local response=$1
+    rich_html_response=$(echo "$response" | jq -r '.report.richHtml // empty')
+    rich_css_response=$(echo "$response" | jq -r '.report.richCss // empty')
+    basic_html_response=$(echo "$response" | jq -r '.report.basicHtml // empty')
+}
+
+# Function to check report status
+check_report_status() {
+    local response=$1
+    local status_code
+    local body
+    local error_message
+    
+    status_code=$(echo "$response" | jq -r '.status_code')
+    body=$(echo "$response" | jq -r '.body')
+    
+    if [[ $status_code -ne 200 ]]; then
+        echo "Error: API returned status code $status_code"
+        error_message=$(echo "$body" | jq -r '.message // "Unknown error"')
+        echo "Error message: $error_message"
+        return 1
+    fi
+    
+    REPORT_STATUS=$(echo "$body" | jq -r '.reportStatus // empty')
+    if [[ "$REPORT_STATUS" == "$REPORT_STATUS_COMPLETED" || 
+        "$REPORT_STATUS" == "$REPORT_STATUS_TEST_AVAILABLE" ||
+        "$REPORT_STATUS" == "$REPORT_STATUS_NOT_AVAILABLE" ]]; then
+        extract_report_data "$body"
+        return 0
+    fi
+    return 2
+}
+echo "Making initial API request to Browserstack CAD API..."
+
+# Initial API Request
+RESPONSE=$(make_api_request "FIRST")
+check_report_status "$RESPONSE" || true
+RETRY_COUNT=$(echo "$RESPONSE" | jq -r '.body.retryCount // 3')
+POLLING_DURATION=$(echo "$RESPONSE" | jq -r '.body.pollingInterval // 3000')
+POLLING_DURATION=$((POLLING_DURATION / 1000))
+
+# Polling Mechanism
+[ "$REPORT_STATUS" == "$REPORT_STATUS_IN_PROGRESS" ]  && {
+  echo "Starting polling mechanism to fetch CAD report..."
+}
+local_retry=0
+ELAPSED_TIME=0
+
+while [[ $local_retry -lt $RETRY_COUNT && $REPORT_STATUS == "$REPORT_STATUS_IN_PROGRESS" ]]; do
+    if [[ -n "$USER_TIMEOUT" && "$ELAPSED_TIME" -ge "$USER_TIMEOUT" ]]; then
+        echo "User timeout reached. Making final API request..."
+        RESPONSE=$(make_api_request "LAST")
+        check_report_status "$RESPONSE" && break
+        break
+    fi
+
+    ELAPSED_TIME=$((ELAPSED_TIME + POLLING_DURATION))
+    local_retry=$((local_retry + 1))
+
+    RESPONSE=$(make_api_request "POLL")
+    echo "Polling attempt $local_retry/$RETRY_COUNT"
+    
+    # Stop polling if API response is non-200
+    status_code=$(echo "$RESPONSE" | jq -r '.status_code')
+    if [[ $status_code -ne 200 ]]; then
+        echo "Polling stopped due to non-200 response from API. Status code: $status_code"
+        break
+    fi
+
+    check_report_status "$RESPONSE" && {
+        echo "Valid report status received. Exiting polling loop...."
+        break
+    }
+    
+    sleep "$POLLING_DURATION"
+done
+
+# Handle Report
+if [[ -n "$rich_html_response" ]]; then
+  # Embed CSS into the rich HTML report
+  mkdir -p browserstack
+  echo "<!DOCTYPE html>
+<html>
+<head>
+<style>
+$rich_css_response
+</style>
+</head>
+$rich_html_response
+</html>" > browserstack/cadreport.html
+  echo "Rich html report saved as browserstack/cadreport.html. To view the report, open artifacts tab & click on cadreport.html"
+
+# Generate basic text report
+  if [[ -n "$basic_html_response" ]]; then
+    # Wrap basic_html_response with DOCTYPE html and body tags
+    basic_html_response="<!DOCTYPE html><html>$basic_html_response/html>"
+
+    if command -v html2text &> /dev/null; then
+      basic_text_report=$(echo "$basic_html_response" | html2text)
+      echo "Basic report (text format):"
+      echo "$basic_text_report"
+    else
+      echo "html2text not installed. Skipping text report generation."
+    fi
+  else
+    echo "Basic HTML response is empty."
+  fi
+elif [[ "$REPORT_STATUS" == "$REPORT_STATUS_NOT_AVAILABLE" ]]; then
+  error_reason=$(echo "$RESPONSE" | jq -r '.body.errorReason // empty')
+  default_error_message="Failed to retrieve report. Reason:"
+  if [[ -n "$error_reason" ]]; then
+    echo "$default_error_message ${ERROR_SCENARIOS[$error_reason]:-$error_reason}"
+  else
+    echo "$default_error_message Unexpected error"
+  fi
+else
+  echo "Failed to retrieve report."
+fi
+# Ensure pipeline doesn't exit with non-zero status
+exit 0

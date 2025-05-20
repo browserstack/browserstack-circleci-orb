@@ -1,0 +1,17 @@
+description: "Upload report and handle polling mechanism"
+
+parameters:
+  user_timeout:
+    type: integer
+    description: "User timeout in seconds to manage poll time of report (optional)"
+    default: 100
+    
+steps:
+  - run:
+      name: Show & Upload Report
+      command: <<include(scripts/show_report.sh)>>
+      environment:
+        USER_TIMEOUT: <<parameters.user_timeout>>
+  - store_artifacts:
+      path: browserstack/cadreport.html
+      destination: Browserstack Cad Report
