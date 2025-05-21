@@ -39,7 +39,7 @@ make_api_request() {
     -D "$header_file" \
     -d "{
           \"originalBuildName\": \"${BROWSERSTACK_BUILD_NAME}\",
-          \"buildCreatedAt\": \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\",
+          \"buildStartedAt\": \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\",
           \"requestingCi\": \"$REQUESTING_CI\",
           \"reportFormat\": $REPORT_FORMAT,
           \"requestType\": \"$request_type\",
