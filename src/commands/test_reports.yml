@@ -9,7 +9,7 @@ parameters:
 steps:
   - run:
       name: Show & Upload Report
-      command: <<include(scripts/show_report.sh)>>
+      command: <<include(scripts/test_reports.sh)>>
       environment:
         USER_TIMEOUT: <<parameters.user_timeout>>
   - store_artifacts:
