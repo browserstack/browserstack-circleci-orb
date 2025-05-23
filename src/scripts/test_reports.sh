@@ -7,7 +7,7 @@ REPORT_STATUS_NOT_AVAILABLE="NOT_AVAILABLE"
 REPORT_STATUS_TEST_AVAILABLE="TEST_AVAILABLE"
 REPORT_STATUS_IN_PROGRESS="IN_PROGRESS"
 REQUESTING_CI="circle-ci"
-REPORT_FORMAT="[\"plainText\", \"richHtml\"]"
+REPORT_FORMAT='["plainText", "richHtml"]'
 
 # Error scenario mappings
 declare -A ERROR_SCENARIOS=(
@@ -39,7 +39,7 @@ make_api_request() {
     -D "$header_file" \
     -d "{
           \"originalBuildName\": \"${BROWSERSTACK_BUILD_NAME}\",
-          \"buildStartedAt\": \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\",
+          \"buildStartedAt\": \"$(date +%s)\",
           \"requestingCi\": \"$REQUESTING_CI\",
           \"reportFormat\": $REPORT_FORMAT,
           \"requestType\": \"$request_type\",
@@ -53,6 +53,10 @@ make_api_request() {
   
   # Clean up the temporary file
   rm -f "$header_file"
+  
+  if [[ -z "$body" ]]; then
+    body='""'
+  fi
 
   # Return both status code and body as a JSON object
   echo "{\"status_code\": $http_status, \"body\": $body}"
