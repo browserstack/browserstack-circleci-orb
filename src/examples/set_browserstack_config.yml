@@ -1,5 +1,5 @@
 description: |
-  This example demonstrates how to set BrowserStack config in Job Scope.
+  This example demonstrates how to set BrowserStack config in Job Scope. (CIRCLECI_TOKEN needs to be set in CircleCI project environment variables)
 
 usage:
   version: 2.1
