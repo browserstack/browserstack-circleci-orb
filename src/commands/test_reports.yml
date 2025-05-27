@@ -4,7 +4,7 @@ parameters:
   user_timeout:
     type: integer
     description: "User timeout in seconds to manage poll time of report (optional)"
-    default: 100
+    default: 130
     
 steps:
   - run:
