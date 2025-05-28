@@ -13,5 +13,5 @@ steps:
       environment:
         USER_TIMEOUT: <<parameters.user_timeout>>
   - store_artifacts:
-      path: browserstack/cadreport.html
-      destination: Browserstack Cad Report
+      path: browserstack/testreport.html
+      destination: Browserstack Test Report

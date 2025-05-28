@@ -96,7 +96,7 @@ check_report_status() {
     fi
     return 2
 }
-echo "Making initial API request to Browserstack CAD API..."
+echo "Making initial API request to Browserstack Test Report API..."
 
 # Initial API Request
 RESPONSE=$(make_api_request "FIRST")
@@ -107,7 +107,7 @@ POLLING_DURATION=$((POLLING_DURATION / 1000))
 
 # Polling Mechanism
 [ "$REPORT_STATUS" == "$REPORT_STATUS_IN_PROGRESS" ]  && {
-  echo "Starting polling mechanism to fetch CAD report..."
+  echo "Starting polling mechanism to fetch Test report..."
 }
 local_retry=0
 ELAPSED_TIME=0
@@ -153,8 +153,8 @@ $rich_css_response
 </style>
 </head>
 $rich_html_response
-</html>" > browserstack/cadreport.html
-  echo "Rich html report saved as browserstack/cadreport.html. To view the report, open artifacts tab & click on cadreport.html"
+</html>" > browserstack/testreport.html
+  echo "Rich html report saved as browserstack/testreport.html. To view the report, open artifacts tab & click on testreport.html"
 
   # Generate plain text report
   if [[ -n "$plain_text_response" ]]; then
