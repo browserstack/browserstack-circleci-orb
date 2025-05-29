@@ -22,6 +22,11 @@ if [[ -z "$BROWSERSTACK_BUILD_NAME" ]]; then
   exit 0
 fi
 
+if [[ "$USER_TIMEOUT" -lt 20 || "$USER_TIMEOUT" -gt 600 ]]; then
+  echo "Error: USER_TIMEOUT must be between 20 and 600 seconds."
+  exit 1
+fi
+
 # Function to make API requests
 make_api_request() {
   local request_type=$1
