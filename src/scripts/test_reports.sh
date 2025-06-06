@@ -107,8 +107,7 @@ echo "Making initial API request to Browserstack Test Report API..."
 RESPONSE=$(make_api_request "FIRST")
 check_report_status "$RESPONSE" || true
 RETRY_COUNT=$(echo "$RESPONSE" | jq -r '.body.retryCount // 3')
-POLLING_DURATION=$(echo "$RESPONSE" | jq -r '.body.pollingInterval // 3000')
-POLLING_DURATION=$((POLLING_DURATION / 1000))
+POLLING_DURATION=$(echo "$RESPONSE" | jq -r '.body.pollingInterval // 3')
 
 # Polling Mechanism
 [ "$REPORT_STATUS" == "$REPORT_STATUS_IN_PROGRESS" ]  && {
