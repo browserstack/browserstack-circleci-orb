@@ -1,0 +1,29 @@
+description: |
+  This example demonstrates how to set BrowserStack config in Job Scope. (CIRCLECI_TOKEN needs to be set in CircleCI project environment variables)
+
+usage:
+  version: 2.1
+  orbs:
+    browserstack-circleci-orb: browserstack/browserstack-circleci-orb@x.y.z
+
+  jobs:
+    my_test_job:
+      executor: default
+      environment:
+        BROWSERSTACK_USERNAME: "xxx"
+        BROWSERSTACK_ACCESS_KEY: "yyy"
+        BROWSERSTACK_LOCAL: false
+        BROWSERSTACK_LOCAL_IDENTIFIER: "identifier"
+
+      steps:
+        - checkout
+        - browserstack-circleci-orb/set_browserstack_config
+        - run:
+            name: Run Test
+            command: |
+              echo "Browserstack build name: $BROWSERSTACK_BUILD_NAME"
+              npm run test
+  workflows:
+    set-rerun-tests-example:
+      jobs:
+        - my_test_job

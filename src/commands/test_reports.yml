@@ -1,0 +1,17 @@
+description: "Upload report and handle polling mechanism"
+
+parameters:
+  user_timeout:
+    type: integer
+    description: "User timeout in seconds to manage poll time of report (optional)"
+    default: 130
+    
+steps:
+  - run:
+      name: Show & Upload Report
+      command: <<include(scripts/test_reports.sh)>>
+      environment:
+        USER_TIMEOUT: <<parameters.user_timeout>>
+  - store_artifacts:
+      path: browserstack/testreport.html
+      destination: Browserstack Test Report
