@@ -1,8 +1,14 @@
-description: "Cleanup the project level environment variable set by browserstack rerun API"
+description: "Set Browserstack Rerun Tests & delete environment variable if needed"
+
+parameters:
+  delete_env_var:
+    description: "Delete the environment variable"
+    default: false
+    type: boolean
 
 steps:
   - run:
       name: Set Rerun Tests
       command: <<include(scripts/rerun_tests.sh)>>
       environment:
-        CLEANUP_ENV_VAR: true
+        DELETE_ENV_VAR: << parameters.delete_env_var >>
